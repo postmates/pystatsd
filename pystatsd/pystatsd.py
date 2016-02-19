@@ -11,8 +11,8 @@ def increment(stat, delta=1, rate=1, gauge=False):
 
        Optionally the caller can specify both the rate for the increment (default is 1)
        as well as whether or not to treat the given stat as a gauge"""
-    kind = StatsdOp.delta
-    action = StatsdAction(kind=kind, stat=stat, val=delta, rate=rate, gauge=gauge)
+    kind = _StatsdOp.delta
+    action = _StatsdAction(kind=kind, stat=stat, val=delta, rate=rate, gauge=gauge)
     _enqueue(action)
 
 def decrement(stat, delta=1, rate=1, gauge=False):
@@ -20,27 +20,27 @@ def decrement(stat, delta=1, rate=1, gauge=False):
 
        Optionally the caller can specify both the rate for the decrement (default is 1)
        as well as whether or not to treat the given stat as a gauge"""
-    kind = StatsdOp.delta
-    action = StatsdAction(kind=kind, stat=stat, val=-1*delta, rate=rate, gauge=gauge)
+    kind = _StatsdOp.delta
+    action = _StatsdAction(kind=kind, stat=stat, val=-1*delta, rate=rate, gauge=gauge)
 
 def set(stat, value, rate=1):
     """Sets the given gauge to the value provided.
 
        Optionally the caller can specify the rate for the set operation (default is 1)"""
-    kind = StatsdOp.gauge_set,
-    action = StatsdAction(kind=kind, stat=stat, val=value, rate=rate, gauge=True)
+    kind = _StatsdOp.gauge_set,
+    action = _StatsdAction(kind=kind, stat=stat, val=value, rate=rate, gauge=True)
     _enqueue(action)
 
 def distinct(stat, value):
     """Add value to the set identified by stat, if it doesn't already exist"""
-    kind = StatsdOp.distinct
-    action = StatsdAction(kind=kind, stat=stat, val=value)
+    kind = _StatsdOp.distinct
+    action = _StatsdAction(kind=kind, stat=stat, val=value)
     _enqueue(action)
 
 def timing(stat, value):
     """Set timing stat to the value provided."""
-    kind = StatsdOp.timing
-    action = StatsdAction(kind=kind, stat=stat, val=value)
+    kind = _StatsdOp.timing
+    action = _StatsdAction(kind=kind, stat=stat, val=value)
     _enqueue(action)
 
 # Private API
@@ -57,22 +57,22 @@ def _worker_loop(obj):
         gauge = action.gauge
         rate = action.rate
 
-        if kind == StatsdOp.delta:
+        if kind == _StatsdOp.delta:
             obj.delta(stat, val, rate, gauge)
-        elif kind == StatsdOp.timing:
+        elif kind == _StatsdOp.timing:
             obj.timing(stat, val, rate)
-        elif (kind == StatsdOp.gauge_set) and gauge:
+        elif (kind == _StatsdOp.gauge_set) and gauge:
             obj.gauge_set(stat, val, rate)
-        elif action.kind == StatsdOp.distinct:
+        elif action.kind == _StatsdOp.distinct:
             obj.distinct(stat, val)
 
-class StatsdOp(Enum):
+class _StatsdOp(Enum):
     delta = 1
     gauge_set = 2
     distinct = 3
     timing = 4
 
-class StatsdAction:
+class _StatsdAction:
     def __init__(self, kind, stat, val=1, rate=1, gauge=False):
         self.kind = kind
         self.stat = stat
@@ -80,7 +80,7 @@ class StatsdAction:
         self.gauge = gauge
         self.rate = rate
 
-class StatsdWorker:
+class _StatsdWorker:
 
     def __init__(self):
         self.queue = Queue()
@@ -131,5 +131,5 @@ class StatsdWorker:
 
 # Globals
 
-__STATSD_WORKER__ = StatsdWorker()
+__STATSD_WORKER__ = _StatsdWorker()
 __STATSD_WORKER__.run()
