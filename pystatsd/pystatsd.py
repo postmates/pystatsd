@@ -7,25 +7,38 @@ import statsd
 # Public API
 
 def increment(stat, delta=1, rate=1, gauge=False):
+    """Increments the given counter by the delta provided (1 by default).
+
+       Optionally the caller can specify both the rate for the increment (default is 1)
+       as well as whether or not to treat the given stat as a gauge"""
     kind = StatsdOp.delta
     action = StatsdAction(kind=kind, stat=stat, val=delta, rate=rate, gauge=gauge)
     _enqueue(action)
 
 def decrement(stat, delta=1, rate=1, gauge=False):
+    """Decrements the given counter by the delta provided (1 by default).
+
+       Optionally the caller can specify both the rate for the decrement (default is 1)
+       as well as whether or not to treat the given stat as a gauge"""
     kind = StatsdOp.delta
     action = StatsdAction(kind=kind, stat=stat, val=-1*delta, rate=rate, gauge=gauge)
 
 def set(stat, value, rate=1):
+    """Sets the given gauge to the value provided.
+
+       Optionally the caller can specify the rate for the set operation (default is 1)"""
     kind = StatsdOp.gauge_set,
     action = StatsdAction(kind=kind, stat=stat, val=value, rate=rate, gauge=True)
     _enqueue(action)
 
 def distinct(stat, value):
+    """Add value to the set identified by stat, if it doesn't already exist"""
     kind = StatsdOp.distinct
     action = StatsdAction(kind=kind, stat=stat, val=value)
     _enqueue(action)
 
 def timing(stat, value):
+    """Set timing stat to the value provided."""
     kind = StatsdOp.timing
     action = StatsdAction(kind=kind, stat=stat, val=value)
     _enqueue(action)
@@ -72,9 +85,9 @@ class StatsdWorker:
     def __init__(self):
         self.queue = Queue()
 
-        # UDP connection to localhost:5189
+        # UDP connection to localhost:8125
         self.conn = statsd.StatsClient()
-      
+
         self.p = None
 
     def run(self):
@@ -112,7 +125,7 @@ class StatsdWorker:
 
     def timing(self, stat, delta, rate=1):
         self.conn.timing(stat, delta, rate)
-    
+
     def distinct(self, stat, value):
         self.conn.set(stat, value)
 

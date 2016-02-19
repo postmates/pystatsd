@@ -1,8 +1,21 @@
 import unittest
 
+import statsd
 import pystatsd
 
 class TestPystatsd(unittest.TestCase):
+
+    def test_no_exceptions_with_bad_types(self):
+        """Asserts that StatsClients are resilient to type mismatches."""
+        conn = statsd.StatsClient()
+        conn.incr("foo", "12")
+        conn.incr("foo.bar", 12, "-100")
+        conn.incr(733, 12, 1.0)
+        conn.incr("foo.gauge", 12, 1.0)
+
+        conn.gauge(12, 40)
+        conn.gauge("foo.bar", "adsfasdf")
+        conn.gauge("foo.bar", 10, "-100")
 
     def test_counter_increment(self):
         pystatsd.increment(stat="foo.bar")
