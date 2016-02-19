@@ -27,7 +27,7 @@ def set(stat, value, rate=1):
     """Sets the given gauge to the value provided.
 
        Optionally the caller can specify the rate for the set operation (default is 1)"""
-    kind = _StatsdOp.gauge_set,
+    kind = _StatsdOp.set
     action = _StatsdAction(kind=kind, stat=stat, val=value, rate=rate, gauge=True)
     _enqueue(action)
 
@@ -61,14 +61,14 @@ def _worker_loop(obj):
             obj.delta(stat, val, rate, gauge)
         elif kind == _StatsdOp.timing:
             obj.timing(stat, val, rate)
-        elif (kind == _StatsdOp.gauge_set) and gauge:
+        elif (kind == _StatsdOp.set) and gauge:
             obj.gauge_set(stat, val, rate)
         elif action.kind == _StatsdOp.distinct:
             obj.distinct(stat, val)
 
 class _StatsdOp(Enum):
     delta = 1
-    gauge_set = 2
+    set = 2
     distinct = 3
     timing = 4
 
@@ -121,7 +121,7 @@ class _StatsdWorker:
             self.decrement(stat, delta, abs(delta), gauge)
 
     def gauge_set(self, stat, val, rate):
-        self.conn.gauge(state, val, rate)
+        self.conn.gauge(stat, val, rate)
 
     def timing(self, stat, delta, rate=1):
         self.conn.timing(stat, delta, rate)
