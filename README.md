@@ -21,7 +21,7 @@ import pystatsd
 pystatsd.increment("foo.counter", 1)
 
 # Decrement the same counter by 10
-pystatsd.increment("foo.counter", 10)
+pystatsd.decrement("foo.counter", 10)
 
 # Set the value of a gauge to 450
 pystatsd.set("foo.gauge", 450)
