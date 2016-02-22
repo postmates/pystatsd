@@ -16,7 +16,7 @@ setup(
     description = ("Thread safe statsd API"),
     license = "MIT",
     keywords = "python statsd",
-    url = "Blech",
+    url = "https://github.com/postmates/pystatsd",
     packages=['pystatsd'],
     long_description=read('README.md'),
     classifiers=[
