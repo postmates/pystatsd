@@ -2,6 +2,7 @@ from threading import Thread
 from multiprocessing import Queue
 from enum import Enum
 
+import os
 import statsd
 
 # Public API
@@ -85,9 +86,11 @@ class _StatsdWorker:
     def __init__(self):
         self.queue = Queue()
 
-        # UDP connection to localhost:8125
-        self.conn = statsd.StatsClient()
+        host = os.getenv('POSTMATES_STATSD_HOST', 'localhost')
+        port = int(os.getenv('POSTMATES_STATSD_PORT', '8125'))
+        prefix = os.getenv('POSTMATES_STATSD_PREFIX', None)
 
+        self.conn = statsd.StatsClient(host, port, prefix=prefix)
         self.p = None
 
     def run(self):
