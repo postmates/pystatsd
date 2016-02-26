@@ -23,6 +23,7 @@ def decrement(stat, delta=1, rate=1, gauge=False):
        as well as whether or not to treat the given stat as a gauge"""
     kind = _StatsdOp.delta
     action = _StatsdAction(kind=kind, stat=stat, val=-1*delta, rate=rate, gauge=gauge)
+    _enqueue(action)
 
 def set(stat, value, rate=1):
     """Sets the given gauge to the value provided.
