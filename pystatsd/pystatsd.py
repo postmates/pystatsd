@@ -87,9 +87,9 @@ class _StatsdWorker:
     def __init__(self):
         self.queue = Queue()
 
-        host = os.getenv('POSTMATES_STATSD_HOST', 'localhost')
-        port = int(os.getenv('POSTMATES_STATSD_PORT', '8125'))
-        prefix = os.getenv('POSTMATES_STATSD_PREFIX', None)
+        host = os.getenv('PM_STATSD_HOST', 'localhost')
+        port = int(os.getenv('PM_STATSD_PORT', '8125'))
+        prefix = os.getenv('PM_STATSD_PREFIX', None)
 
         self.conn = statsd.StatsClient(host, port, prefix=prefix)
         self.p = None
