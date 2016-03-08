@@ -54,7 +54,7 @@ def _worker_loop(obj):
     while True:
         action = obj.dequeue()
         kind = action.kind
-        stat = action.stat
+        stat = obj.prefix + action.stat
         val = action.val
         gauge = action.gauge
         rate = action.rate
@@ -89,9 +89,11 @@ class _StatsdWorker:
 
         host = os.getenv('PM_STATSD_HOST', 'localhost')
         port = int(os.getenv('PM_STATSD_PORT', '8125'))
-        prefix = os.getenv('PM_STATSD_PREFIX', None)
+        prefix = os.getenv('PM_STATSD_PREFIX', "")
 
-        self.conn = statsd.StatsClient(host, port, prefix=prefix)
+        # We set prefix here as StatsdClient appends a "." after all prefix
+        self.prefix = prefix
+        self.conn = statsd.StatsClient(host, port)
         self.p = None
 
     def run(self):
