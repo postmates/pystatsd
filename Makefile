@@ -7,6 +7,10 @@ all: deps compile
 compile:
 	python setup.py build
 
+.PHONY: install
+install: all
+	python setup.py install
+
 .PHONY: clean-all
 clean-all: clean
 
