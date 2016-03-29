@@ -59,7 +59,9 @@ def _worker_loop(obj):
         gauge = action.gauge
         rate = action.rate
 
-        if kind == _StatsdOp.delta:
+        if kind == _StatsdOp.stop:
+            thread.exit()
+        elif kind == _StatsdOp.delta:
             obj.delta(stat, val, rate, gauge)
         elif kind == _StatsdOp.timing:
             obj.timing(stat, val, rate)
@@ -73,6 +75,7 @@ class _StatsdOp(Enum):
     set = 2
     distinct = 3
     timing = 4
+    stop = 5
 
 class _StatsdAction:
     def __init__(self, kind, stat, val=1, rate=1, gauge=False):
@@ -139,3 +142,11 @@ class _StatsdWorker:
 
 __STATSD_WORKER__ = _StatsdWorker()
 __STATSD_WORKER__.run()
+
+def _stop_worker():
+    kind = _StatsdOp.stop
+    action = _StatsdAction(kind=kind, stat="", val=10)
+    _enqueue(action)
+
+import atexit
+atexit.register(_stop_worker)
