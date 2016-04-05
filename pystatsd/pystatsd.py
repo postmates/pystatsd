@@ -90,9 +90,9 @@ class _StatsdWorker:
     def __init__(self):
         self.queue = Queue()
 
-        host = os.getenv('PM_STATSD_HOST', 'localhost')
-        port = int(os.getenv('PM_STATSD_PORT', '8125'))
-        prefix = os.getenv('PM_STATSD_PREFIX', "")
+        host = os.getenv('STATSD_HOST', 'localhost')
+        port = int(os.getenv('STATSD_PORT', '8125'))
+        prefix = os.getenv('STATSD_PREFIX', "")
 
         # We set prefix here as StatsdClient appends a "." after all prefix
         self.prefix = prefix
