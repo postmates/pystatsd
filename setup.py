@@ -11,7 +11,7 @@ def read(fname):
 
 setup(
     name="pystatsd",
-    version="0.0.1",
+    version="1.0.0",
     author="John Koenig",
     author_email="john@postmates.com",
     description=("Thread safe statsd API"),
