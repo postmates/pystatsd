@@ -1,7 +1,7 @@
 .DEFAULT_GOAL   := all
 
 .PHONY: all
-all: deps compile
+all: compile
 
 .PHONY: compile
 compile:
@@ -24,7 +24,3 @@ test: check
 .PHONY: check
 check:
 	python -m unittest discover
-
-.PHONY: deps
-deps:
-	pip install -r requirements.txt
