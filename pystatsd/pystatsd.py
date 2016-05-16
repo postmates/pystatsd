@@ -12,43 +12,87 @@ def increment(stat, delta=1, rate=1, gauge=False):
 
        Optionally the caller can specify both the rate for the increment (default is 1)
        as well as whether or not to treat the given stat as a gauge"""
-    kind = _StatsdOp.delta
-    action = _StatsdAction(kind=kind, stat=stat, val=delta, rate=rate, gauge=gauge)
-    _enqueue(action)
+    Client().increment(stat, delta, rate, gauge)
 
 def decrement(stat, delta=1, rate=1, gauge=False):
     """Decrements the given counter by the delta provided (1 by default).
 
        Optionally the caller can specify both the rate for the decrement (default is 1)
        as well as whether or not to treat the given stat as a gauge"""
-    kind = _StatsdOp.delta
-    action = _StatsdAction(kind=kind, stat=stat, val=-1*delta, rate=rate, gauge=gauge)
-    _enqueue(action)
+    Client().decrement(stat, delta, rate, gauge)
 
 def set(stat, value, rate=1):
     """Sets the given gauge to the value provided.
 
        Optionally the caller can specify the rate for the set operation (default is 1)"""
-    kind = _StatsdOp.set
-    action = _StatsdAction(kind=kind, stat=stat, val=value, rate=rate, gauge=True)
-    _enqueue(action)
+    Client().set(stat, value, rate)
 
 def distinct(stat, value):
     """Add value to the set identified by stat, if it doesn't already exist"""
-    kind = _StatsdOp.distinct
-    action = _StatsdAction(kind=kind, stat=stat, val=value)
-    _enqueue(action)
+    Client().distinct(state, value)
 
 def timing(stat, value):
     """Set timing stat to the value provided."""
     kind = _StatsdOp.timing
     action = _StatsdAction(kind=kind, stat=stat, val=value)
-    _enqueue(action)
+    Client().timing(stat, value)
+
+class _Singleton(type):
+    _instance = None
+    def __call__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(_Singleton, cls).__call__(*args, **kwargs)
+        return cls._instance
+
+class Client():
+    __metaclass__ = _Singleton
+
+    def __init__(self):
+        self._worker = _StatsdWorker()
+        self._worker.run()
+
+    def enqueue(self, action):
+        self._worker.enqueue(action)
+
+    def increment(self, stat, delta=1, rate=1, gauge=False):
+        """Increments the given counter by the delta provided (1 by default).
+
+           Optionally the caller can specify both the rate for the increment (default is 1)
+           as well as whether or not to treat the given stat as a gauge"""
+        kind = _StatsdOp.delta
+        action = _StatsdAction(kind=kind, stat=stat, val=delta, rate=rate, gauge=gauge)
+        self.enqueue(action)
+
+    def decrement(self, stat, delta=1, rate=1, gauge=False):
+        """Decrements the given counter by the delta provided (1 by default).
+
+           Optionally the caller can specify both the rate for the decrement (default is 1)
+           as well as whether or not to treat the given stat as a gauge"""
+        kind = _StatsdOp.delta
+        action = _StatsdAction(kind=kind, stat=stat, val=-1*delta, rate=rate, gauge=gauge)
+        self.enqueue(action)
+
+    def set(self, stat, value, rate=1):
+        """Sets the given gauge to the value provided.
+
+           Optionally the caller can specify the rate for the set operation (default is 1)"""
+        kind = _StatsdOp.set
+        action = _StatsdAction(kind=kind, stat=stat, val=value, rate=rate, gauge=True)
+        self.enqueue(action)
+
+    def distinct(self, stat, value):
+        """Add value to the set identified by stat, if it doesn't already exist"""
+        kind = _StatsdOp.distinct
+        action = _StatsdAction(kind=kind, stat=stat, val=value)
+        self.enqueue(action)
+
+    def timing(self, stat, value):
+        """Set timing stat to the value provided."""
+        kind = _StatsdOp.timing
+        action = _StatsdAction(kind=kind, stat=stat, val=value)
+        self.enqueue(action)
 
 # Private API
-
-def _enqueue(action):
-    __STATSD_WORKER__.enqueue(action)
 
 def _worker_loop(obj):
     while True:
@@ -143,14 +187,3 @@ class _StatsdWorker:
 
     def distinct(self, stat, value):
         self.conn.set(stat, value)
-
-# Globals
-
-__STATSD_WORKER__ = _StatsdWorker()
-__STATSD_WORKER__.run()
-
-def _stop_worker():
-    __STATSD_WORKER__.stop()
-
-import atexit
-atexit.register(_stop_worker)
