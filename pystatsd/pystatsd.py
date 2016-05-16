@@ -33,8 +33,6 @@ def distinct(stat, value):
 
 def timing(stat, value):
     """Set timing stat to the value provided."""
-    kind = _StatsdOp.timing
-    action = _StatsdAction(kind=kind, stat=stat, val=value)
     Client().timing(stat, value)
 
 class _Singleton(type):
