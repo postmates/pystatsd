@@ -44,5 +44,10 @@ class TestPystatsd(unittest.TestCase):
     def test_timing(self):
         pystatsd.timing(stat="my.timer", value=400)
 
+    def test_singleton(self):
+        c1 = pystatsd.Client()
+        c2 = pystatsd.Client()
+        assert(c1 is c2)
+
     if __name__ == '__main__':
         unittest.main()
