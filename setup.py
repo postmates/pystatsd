@@ -11,17 +11,15 @@ def read(fname):
 
 setup(
     name="pystatsd",
-    version="1.0.0",
+    version="2.0.0",
     author="John Koenig",
     author_email="john@postmates.com",
-    description=("Thread safe statsd API"),
+    description=("One-liner statsd API"),
     license="MIT",
     keywords="python statsd",
     url="https://github.com/postmates/pystatsd",
     packages=['pystatsd'],
     install_requires=[
-        "statsd>=3.2.1",
-        "enum34>=1.1.2",
     ],
     long_description=read('README.md'),
     classifiers=[

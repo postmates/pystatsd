@@ -1,35 +1,147 @@
-from threading import Thread
-from multiprocessing import Queue
-from enum import Enum
+# pystatsd.py
+
+# Modified from the original version by:
+# Steve Ivy <steveivy@gmail.com>
+# http://monkinetic.com
+# https://github.com/sivy/pystatsd/blob/master/pystatsd
+
+# Changelog:
+# * Renamed Client to StatsClient
+# * Introduced singleton Client wrapper around StatsClient
+# * Added `one-liner` API
+
+import logging
+import socket
+import random
+import time
 
 import os
-import statsd
 
-# Public API
+# Sends statistics to the stats daemon over UDP
+# Renamed from the original pystatsd.Client class.
+class StatsClient(object):
 
-def increment(stat, delta=1, rate=1, gauge=False):
+    def __init__(self, host='localhost', port=8125, prefix=None):
+        """
+        Create a new Statsd client.
+        * host: the host where statsd is listening, defaults to localhost
+        * port: the port where statsd is listening, defaults to 8125
+
+        >>> from pystatsd import statsd
+        >>> stats_client = statsd.Statsd(host, port)
+        """
+        self.host = host
+        self.port = int(port)
+        self.addr = (socket.gethostbyname(self.host), self.port)
+        self.prefix = prefix
+        self.log = logging.getLogger("pystatsd.client")
+        self.log.addHandler(logging.StreamHandler())
+        self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    def timing_since(self, stat, start, sample_rate=1):
+        """
+        Log timing information as the number of microseconds since the provided time float
+        >>> start = time.time()
+        >>> # do stuff
+        >>> statsd_client.timing_since('some.time', start)
+        """
+        self.timing(stat, int((time.time() - start) * 1000000), sample_rate)
+
+    def timing(self, stat, time, sample_rate=1):
+        """
+        Log timing information for a single stat
+        >>> statsd_client.timing('some.time',500)
+        """
+        stats = {stat: "%f|ms" % time}
+        self.send(stats, sample_rate)
+
+    def gauge(self, stat, value, sample_rate=1):
+        """
+        Log gauge information for a single stat
+        >>> statsd_client.gauge('some.gauge',42)
+        """
+        stats = {stat: "%f|g" % value}
+        self.send(stats, sample_rate)
+
+    def increment(self, stats, sample_rate=1):
+        """
+        Increments one or more stats counters
+        >>> statsd_client.increment('some.int')
+        >>> statsd_client.increment('some.int',0.5)
+        """
+        self.update_stats(stats, 1, sample_rate=sample_rate)
+
+    # alias
+    incr = increment
+
+    def decrement(self, stats, sample_rate=1):
+        """
+        Decrements one or more stats counters
+        >>> statsd_client.decrement('some.int')
+        """
+        self.update_stats(stats, -1, sample_rate=sample_rate)
+
+    # alias
+    decr = decrement
+
+    def update_stats(self, stats, delta, sample_rate=1):
+        """
+        Updates one or more stats counters by arbitrary amounts
+        >>> statsd_client.update_stats('some.int',10)
+        """
+        if not isinstance(stats, list):
+            stats = [stats]
+
+        data = dict((stat, "%s|c" % delta) for stat in stats)
+        self.send(data, sample_rate)
+
+    def send(self, data, sample_rate=1):
+        """
+        Squirt the metrics over UDP
+        """
+
+        if self.prefix:
+            data = dict((".".join((self.prefix, stat)), value) for stat, value in data.items())
+
+        if sample_rate < 1:
+            if random.random() > sample_rate:
+                return
+            sampled_data = dict((stat, "%s|@%s" % (value, sample_rate))
+                                for stat, value in data.items())
+        else:
+            sampled_data = data
+
+        try:
+            [self.udp_sock.sendto(bytes(bytearray("%s:%s" % (stat, value),
+                                                  "utf-8")), self.addr)
+             for stat, value in sampled_data.items()]
+        except:
+            self.log.exception("unexpected error")
+
+    def __repr__(self):
+        return "<pystatsd.statsd.Client addr=%s prefix=%s>" % (self.addr, self.prefix)
+
+# Added Public API
+
+def increment(stat, rate=1):
     """Increments the given counter by the delta provided (1 by default).
 
        Optionally the caller can specify both the rate for the increment (default is 1)
        as well as whether or not to treat the given stat as a gauge"""
-    Client().increment(stat, delta, rate, gauge)
+    Client().increment(stat, rate)
 
-def decrement(stat, delta=1, rate=1, gauge=False):
+def decrement(stat, rate=1):
     """Decrements the given counter by the delta provided (1 by default).
 
        Optionally the caller can specify both the rate for the decrement (default is 1)
        as well as whether or not to treat the given stat as a gauge"""
-    Client().decrement(stat, delta, rate, gauge)
+    Client().decrement(stat, rate)
 
 def set(stat, value, rate=1):
     """Sets the given gauge to the value provided.
 
        Optionally the caller can specify the rate for the set operation (default is 1)"""
     Client().set(stat, value, rate)
-
-def distinct(stat, value):
-    """Add value to the set identified by stat, if it doesn't already exist"""
-    Client().distinct(state, value)
 
 def timing(stat, value):
     """Set timing stat to the value provided."""
@@ -46,142 +158,31 @@ class Client(object):
     __metaclass__ = _Singleton
 
     def __init__(self):
-        self._worker = _StatsdWorker()
-        self._worker.run()
+        host = os.getenv('STATSD_HOST', 'localhost')
+        port = int(os.getenv('STATSD_PORT', '8125'))
+        prefix = os.getenv('STATSD_PREFIX', "")
+        self.client = StatsClient(host, port, prefix=prefix)
 
-    def enqueue(self, action):
-        self._worker.enqueue(action)
-
-    def increment(self, stat, delta=1, rate=1, gauge=False):
+    def increment(self, stat, rate=1):
         """Increments the given counter by the delta provided (1 by default).
 
            Optionally the caller can specify both the rate for the increment (default is 1)
            as well as whether or not to treat the given stat as a gauge"""
-        kind = _StatsdOp.delta
-        action = _StatsdAction(kind=kind, stat=stat, val=delta, rate=rate, gauge=gauge)
-        self.enqueue(action)
+        self.client.increment(stat, rate)
 
-    def decrement(self, stat, delta=1, rate=1, gauge=False):
+    def decrement(self, stat, rate=1):
         """Decrements the given counter by the delta provided (1 by default).
 
            Optionally the caller can specify both the rate for the decrement (default is 1)
            as well as whether or not to treat the given stat as a gauge"""
-        kind = _StatsdOp.delta
-        action = _StatsdAction(kind=kind, stat=stat, val=-1*delta, rate=rate, gauge=gauge)
-        self.enqueue(action)
+        self.client.decrement(stat, rate)
 
     def set(self, stat, value, rate=1):
         """Sets the given gauge to the value provided.
 
            Optionally the caller can specify the rate for the set operation (default is 1)"""
-        kind = _StatsdOp.set
-        action = _StatsdAction(kind=kind, stat=stat, val=value, rate=rate, gauge=True)
-        self.enqueue(action)
-
-    def distinct(self, stat, value):
-        """Add value to the set identified by stat, if it doesn't already exist"""
-        kind = _StatsdOp.distinct
-        action = _StatsdAction(kind=kind, stat=stat, val=value)
-        self.enqueue(action)
+        self.client.gauge(stat, value, rate)
 
     def timing(self, stat, value):
         """Set timing stat to the value provided."""
-        kind = _StatsdOp.timing
-        action = _StatsdAction(kind=kind, stat=stat, val=value)
-        self.enqueue(action)
-
-# Private API
-
-def _worker_loop(obj):
-    while True:
-        action = obj.dequeue()
-        kind = action.kind
-        stat = obj.prefix + action.stat
-        val = action.val
-        gauge = action.gauge
-        rate = action.rate
-
-        if kind == _StatsdOp.stop:
-            break
-        elif kind == _StatsdOp.delta:
-            obj.delta(stat, val, rate, gauge)
-        elif kind == _StatsdOp.timing:
-            obj.timing(stat, val, rate)
-        elif (kind == _StatsdOp.set) and gauge:
-            obj.gauge_set(stat, val, rate)
-        elif action.kind == _StatsdOp.distinct:
-            obj.distinct(stat, val)
-
-class _StatsdOp(Enum):
-    delta = 1
-    set = 2
-    distinct = 3
-    timing = 4
-    stop = 5
-
-class _StatsdAction:
-    def __init__(self, kind, stat, val=1, rate=1, gauge=False):
-        self.kind = kind
-        self.stat = stat
-        self.val = val
-        self.gauge = gauge
-        self.rate = rate
-
-class _StatsdWorker:
-
-    def __init__(self):
-        self.queue = Queue()
-
-        host = os.getenv('STATSD_HOST', 'localhost')
-        port = int(os.getenv('STATSD_PORT', '8125'))
-        prefix = os.getenv('STATSD_PREFIX', "")
-
-        # We set prefix here as StatsdClient appends a "." after all prefix
-        self.prefix = prefix
-        self.conn = statsd.StatsClient(host, port)
-        self.p = None
-
-    def run(self):
-        if (not self.p):
-            self.p = Thread(target=_worker_loop, args=(self,))
-            self.p.daemon = True
-            self.p.start()
-
-    def stop(self):
-        kind = _StatsdOp.stop
-        action = _StatsdAction(kind=kind, stat="", val=10)
-        self.enqueue(action)
-        self.p.join()
-
-    def enqueue(self, statsdAction):
-        self.queue.put(statsdAction)
-
-    def dequeue(self):
-        return self.queue.get(True, None)
-
-    def increment(self, stat, delta=1, rate=1, gauge=False):
-        if not gauge:
-            self.conn.incr(stat, delta, rate)
-        else:
-            self.conn.gauge(stat, delta, rate, True)
-
-    def decrement(self, stat, delta=1, rate=1, gauge=False):
-        if not gauge:
-            self.conn.decr(stat, delta, rate)
-        else:
-            self.conn.gauge(stat, delta, rate, True)
-
-    def delta(self, stat, delta=1, rate=1, gauge=False):
-        if delta >= 0:
-            self.increment(stat, delta, rate, gauge)
-        else:
-            self.decrement(stat, delta, abs(delta), gauge)
-
-    def gauge_set(self, stat, val, rate):
-        self.conn.gauge(stat, val, rate)
-
-    def timing(self, stat, delta, rate=1):
-        self.conn.timing(stat, delta, rate)
-
-    def distinct(self, stat, value):
-        self.conn.set(stat, value)
+        self.client.timing(stat, value)

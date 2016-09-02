@@ -18,17 +18,13 @@ Thread Safe Statsd Python API
 import pystatsd
 
 # Increment a counter named foo.counter by 1
-pystatsd.increment("foo.counter", 1)
+pystatsd.increment("foo.counter")
 
-# Decrement the same counter by 10
-pystatsd.decrement("foo.counter", 10)
+# Decrement the same counter by 1 with a sample rate of 0.5
+pystatsd.decrement("foo.counter", 0.5)
 
 # Set the value of a gauge to 450
 pystatsd.set("foo.gauge", 450)
-
-# Increment and decrement the same gauge as before
-pystatsd.increment("foo.gauge", 100, gauge=True)
-pystatsd.decrement("foo.gauge", 10, gauge=True)
 
 # Measure a timing value
 pystatsd.timing("foo.timing", 300)
