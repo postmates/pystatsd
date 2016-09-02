@@ -65,15 +65,13 @@ class Client(object):
     def increment(self, stat, delta=1, rate=1):
         """Increments the given counter by the delta provided (1 by default).
 
-           Optionally the caller can specify both the rate for the increment (default is 1)
-           as well as whether or not to treat the given stat as a gauge"""
+        Optionally the caller can also specify the rate for the increment (default is 1)."""
         self.client.update_stats(stat, delta, rate)
 
     def decrement(self, stat, delta=1, rate=1):
         """Decrements the given counter by the delta provided (1 by default).
 
-           Optionally the caller can specify both the rate for the decrement (default is 1)
-           as well as whether or not to treat the given stat as a gauge"""
+        Optionally the caller can also specify the rate for the decrement (default is 1)."""
         self.client.update_stats(stat, -1 * delta, rate)
 
     def set(self, stat, value, rate=1):
