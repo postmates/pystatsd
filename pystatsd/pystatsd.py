@@ -24,21 +24,19 @@ import os
 def increment(stat, delta=1, rate=1):
     """Increments the given counter by the delta provided (1 by default).
 
-       Optionally the caller can specify both the rate for the increment (default is 1)
-       as well as whether or not to treat the given stat as a gauge"""
+       Optionally the caller can also specify the rate for the increment (default is 1)."""
     Client().increment(stat, delta, rate)
 
 def decrement(stat, delta=1, rate=1):
     """Decrements the given counter by the delta provided (1 by default).
 
-       Optionally the caller can specify both the rate for the decrement (default is 1)
-       as well as whether or not to treat the given stat as a gauge"""
+       Optionally the caller can also specify the rate for the decrement (default is 1)."""
     Client().decrement(stat, delta, rate)
 
 def set(stat, value, rate=1):
     """Sets the given gauge to the value provided.
 
-       Optionally the caller can specify the rate for the set operation (default is 1)"""
+       Optionally the caller can specify the rate for the set operation (default is 1)."""
     Client().set(stat, value, rate)
 
 def timing(stat, value):
@@ -110,15 +108,6 @@ class _StatsClient(object):
         self.log = logging.getLogger("pystatsd.client")
         self.log.addHandler(logging.StreamHandler())
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    def timing_since(self, stat, start, sample_rate=1):
-        """
-        Log timing information as the number of microseconds since the provided time float
-        >>> start = time.time()
-        >>> # do stuff
-        >>> statsd_client.timing_since('some.time', start)
-        """
-        self.timing(stat, int((time.time() - start) * 1000000), sample_rate)
 
     def timing(self, stat, time, sample_rate=1):
         """
