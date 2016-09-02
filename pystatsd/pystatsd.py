@@ -123,14 +123,14 @@ class StatsClient(object):
 
 # Added Public API
 
-def increment(stat, rate=1):
+def increment(stat, delta=1, rate=1):
     """Increments the given counter by the delta provided (1 by default).
 
        Optionally the caller can specify both the rate for the increment (default is 1)
        as well as whether or not to treat the given stat as a gauge"""
     Client().increment(stat, rate)
 
-def decrement(stat, rate=1):
+def decrement(stat, delta=1, rate=1):
     """Decrements the given counter by the delta provided (1 by default).
 
        Optionally the caller can specify both the rate for the decrement (default is 1)
@@ -163,19 +163,20 @@ class Client(object):
         prefix = os.getenv('STATSD_PREFIX', "")
         self.client = StatsClient(host, port, prefix=prefix)
 
-    def increment(self, stat, rate=1):
+    def increment(self, stat, delta=1, rate=1):
         """Increments the given counter by the delta provided (1 by default).
 
            Optionally the caller can specify both the rate for the increment (default is 1)
            as well as whether or not to treat the given stat as a gauge"""
-        self.client.increment(stat, rate)
 
-    def decrement(self, stat, rate=1):
+	self.client.update_stats(stat, delta, rate)
+
+    def decrement(self, stat, delta=1, rate=1):
         """Decrements the given counter by the delta provided (1 by default).
 
            Optionally the caller can specify both the rate for the decrement (default is 1)
            as well as whether or not to treat the given stat as a gauge"""
-        self.client.decrement(stat, rate)
+	self.client.update_stats(stat, delta, rate)
 
     def set(self, stat, value, rate=1):
         """Sets the given gauge to the value provided.
