@@ -176,7 +176,7 @@ class Client(object):
 
            Optionally the caller can specify both the rate for the decrement (default is 1)
            as well as whether or not to treat the given stat as a gauge"""
-	self.client.update_stats(stat, delta, rate)
+	self.client.update_stats(stat, -1 * delta, rate)
 
     def set(self, stat, value, rate=1):
         """Sets the given gauge to the value provided.
