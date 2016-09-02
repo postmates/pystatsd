@@ -20,6 +20,9 @@ import pystatsd
 # Increment a counter named foo.counter by 1
 pystatsd.increment("foo.counter")
 
+# Decrement the same counter by 10
+pystatsd.decrement("foo.counter", 10)
+
 # Decrement the same counter by 1 with a sample rate of 0.5
 pystatsd.decrement("foo.counter", 0.5)
 
