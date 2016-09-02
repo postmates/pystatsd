@@ -128,14 +128,14 @@ def increment(stat, delta=1, rate=1):
 
        Optionally the caller can specify both the rate for the increment (default is 1)
        as well as whether or not to treat the given stat as a gauge"""
-    Client().increment(stat, rate)
+    Client().increment(stat, delta, rate)
 
 def decrement(stat, delta=1, rate=1):
     """Decrements the given counter by the delta provided (1 by default).
 
        Optionally the caller can specify both the rate for the decrement (default is 1)
        as well as whether or not to treat the given stat as a gauge"""
-    Client().decrement(stat, rate)
+    Client().decrement(stat, delta, rate)
 
 def set(stat, value, rate=1):
     """Sets the given gauge to the value provided.
