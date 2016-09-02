@@ -24,7 +24,7 @@ pystatsd.increment("foo.counter")
 pystatsd.decrement("foo.counter", 10)
 
 # Decrement the same counter by 1 with a sample rate of 0.5
-pystatsd.decrement("foo.counter", 0.5)
+pystatsd.decrement("foo.counter", rate=0.5)
 
 # Set the value of a gauge to 450
 pystatsd.set("foo.gauge", 450)
