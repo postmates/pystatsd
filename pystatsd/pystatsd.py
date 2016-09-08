@@ -15,6 +15,8 @@ import logging
 import socket
 import random
 import time
+import datetime
+from functools import wraps
 
 import os
 
@@ -50,6 +52,59 @@ class _Singleton(type):
             self._instance = super(_Singleton, self).__call__(*args, **kwargs)
         return self._instance
 
+class Timer(object):
+    """A context manager/decorator for Client.timing()."""
+
+    def __init__(self, stat, rate=1):
+        self.stat = stat
+        self.rate = rate
+        self.ms = None
+        self._sent = False
+        self._start_time = None
+
+    def __call__(self, f):
+        """Thread-safe timing function decorator."""
+        @wraps(f)
+        def _wrapped(*args, **kwargs):
+            start_time = _utcnow()
+            try:
+                return_value = f(*args, **kwargs)
+            finally:
+                elapsed_time_ms = 1000.0 * (_utcnow() - start_time).total_seconds()
+                Client().timing(self.stat, elapsed_time_ms, self.rate)
+            return return_value
+        return _wrapped
+
+    def __enter__(self):
+        return self.start()
+
+    def __exit__(self, typ, value, tb):
+        self.stop()
+
+    def start(self):
+        self.ms = None
+        self._sent = False
+        self._start_time = _utcnow()
+        return self
+
+    def stop(self, send=True):
+        if self._start_time is None:
+            raise RuntimeError('Timer has not started.')
+        dt = (_utcnow() - self._start_time).total_seconds()
+        self.ms = 1000.0 * dt  # Convert to milliseconds.
+        if send:
+            self.send()
+        return self
+
+    def send(self):
+        if self.ms is None:
+            raise RuntimeError('No data recorded.')
+        if self._sent:
+            raise RuntimeError('Already sent data.')
+        self._sent = True
+        Client().timing(self.stat, self.ms, self.rate)
+
+
 class Client(object):
     """Singleton wrapper around _StatsClient.
 
@@ -80,9 +135,9 @@ class Client(object):
            Optionally the caller can specify the rate for the set operation (default is 1)"""
         self.client.gauge(stat, value, rate)
 
-    def timing(self, stat, value):
+    def timing(self, stat, value, rate=1):
         """Set timing stat to the value provided."""
-        self.client.timing(stat, value)
+        self.client.timing(stat, value, rate)
 
 # Private API
 
@@ -161,3 +216,6 @@ class _StatsClient(object):
 
     def __repr__(self):
         return "<pystatsd.statsd.Client addr=%s prefix=%s>" % (self.addr, self.prefix)
+
+def _utcnow():
+	return datetime.datetime.utcnow()

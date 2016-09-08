@@ -31,6 +31,17 @@ pystatsd.set("foo.gauge", 450)
 
 # Measure a timing value
 pystatsd.timing("foo.timing", 300)
+
+# Measure a timing value with a context manager
+with pystatsd.Timer("foo.timing.context.manager"):
+    for i in range(1, 1000):
+        pass
+
+# Measure a timing value with a decorator
+@pystatsd.Timer('foo.timing.decorator')
+def foo():
+    for i in range(1, 1000):
+        pass
 ```
 
 ## Running Tests
