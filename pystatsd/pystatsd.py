@@ -104,7 +104,6 @@ class Timer(object):
         self._sent = True
         Client().timing(self.stat, self.ms, self.rate)
 
-
 class Client(object):
     """Singleton wrapper around _StatsClient.
 
