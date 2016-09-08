@@ -34,6 +34,16 @@ class TestPystatsd(unittest.TestCase):
     def test_timing(self):
         pystatsd.timing(stat="my.timer", value=400)
 
+    def test_timing_context_manager(self):
+        with pystatsd.Timer('my.timer'):
+            for i in range(1, 1000):
+                pass
+
+    @pystatsd.Timer('my.timer')
+    def test_timing_decorator(self):
+        for i in range(1, 1000):
+            pass
+
     def test_singleton(self):
         c1 = pystatsd.Client()
         c2 = pystatsd.Client()
