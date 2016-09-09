@@ -29,6 +29,12 @@ pystatsd.decrement("foo.counter", rate=0.5)
 # Set the value of a gauge to 450
 pystatsd.set("foo.gauge", 450)
 
+# Increment a gauge by 1
+pystatsd.increment("foo.gauge", gauge=True)
+
+# Decrement a gauge by 10
+pystatsd.decrement("foo.gauge", 10, gauge=True)
+
 # Measure a timing value
 pystatsd.timing("foo.timing", 300)
 

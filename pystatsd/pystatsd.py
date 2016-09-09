@@ -23,22 +23,24 @@ import os
 
 # Public API
 
-def increment(stat, delta=1, rate=1):
-    """Increments the given counter by the delta provided (1 by default).
+def increment(stat, delta=1, rate=1, gauge=False):
+    """Increments the given counter by the delta provided (default: 1).
 
-       Optionally the caller can also specify the rate for the increment (default is 1)."""
-    Client().increment(stat, delta, rate)
+       Optionally the caller can specify the rate for the decrement (default: 1) as
+       well as whether to treat the stat as a gauge (default: False)."""
+    Client().increment(stat, delta, rate, gauge)
 
-def decrement(stat, delta=1, rate=1):
-    """Decrements the given counter by the delta provided (1 by default).
+def decrement(stat, delta=1, rate=1, gauge=False):
+    """Decrements the given counter by the delta provided (default: 1).
 
-       Optionally the caller can also specify the rate for the decrement (default is 1)."""
-    Client().decrement(stat, delta, rate)
+       Optionally the caller can specify the rate for the decrement (default: 1) as
+       well as whether to treat the stat as a gauge (default: False)."""
+    Client().decrement(stat, delta, rate, gauge)
 
 def set(stat, value, rate=1):
     """Sets the given gauge to the value provided.
 
-       Optionally the caller can specify the rate for the set operation (default is 1)."""
+       Optionally the caller can specify the rate for the set operation (default: 1)."""
     Client().set(stat, value, rate)
 
 def timing(stat, value):
@@ -116,22 +118,24 @@ class Client(object):
         prefix = os.getenv('STATSD_PREFIX', "")
         self.client = _StatsClient(host, port, prefix=prefix)
 
-    def increment(self, stat, delta=1, rate=1):
-        """Increments the given counter by the delta provided (1 by default).
+    def increment(self, stat, delta=1, rate=1, gauge=False):
+        """Increments the given counter by the delta provided (default: 1).
 
-        Optionally the caller can also specify the rate for the increment (default is 1)."""
-        self.client.update_stats(stat, delta, rate)
+           Optionally the caller can specify the rate for the decrement (default is 1) as
+           well as whether to treat the stat as a gauge (default: False)."""
+        self.client.update_stats(stat, delta, rate, gauge)
 
-    def decrement(self, stat, delta=1, rate=1):
-        """Decrements the given counter by the delta provided (1 by default).
+    def decrement(self, stat, delta=1, rate=1, gauge=False):
+        """Decrements the given counter by the delta provided (default: 1).
 
-        Optionally the caller can also specify the rate for the decrement (default is 1)."""
-        self.client.update_stats(stat, -1 * delta, rate)
+           Optionally the caller can specify the rate for the decrement (default: 1) as
+           well as whether to treat the stat as a gauge (default: False)."""
+        self.client.update_stats(stat, -1 * delta, rate, gauge)
 
     def set(self, stat, value, rate=1):
         """Sets the given gauge to the value provided.
 
-           Optionally the caller can specify the rate for the set operation (default is 1)"""
+           Optionally the caller can specify the rate for the set operation (default: 1)"""
         self.client.gauge(stat, value, rate)
 
     def timing(self, stat, value, rate=1):
@@ -177,7 +181,7 @@ class _StatsClient(object):
         stats = {stat: "%f|g" % value}
         self.send(stats, sample_rate)
 
-    def update_stats(self, stats, delta, sample_rate=1):
+    def update_stats(self, stats, delta, sample_rate=1, gauges=False):
         """
         Updates one or more stats counters by arbitrary amounts
         >>> statsd_client.update_stats('some.int',10)
@@ -185,7 +189,11 @@ class _StatsClient(object):
         if not isinstance(stats, list):
             stats = [stats]
 
-        data = dict((stat, "%s|c" % delta) for stat in stats)
+        if gauges:
+            prefix = '+' if delta and delta >= 0 else ''
+            data = dict((stat, "%s%s|g" % (prefix,delta)) for stat in stats)
+        else:
+            data = dict((stat, "%s|c" % delta) for stat in stats)
         self.send(data, sample_rate)
 
     def send(self, data, sample_rate=1):
@@ -217,4 +225,4 @@ class _StatsClient(object):
         return "<pystatsd.statsd.Client addr=%s prefix=%s>" % (self.addr, self.prefix)
 
 def _utcnow():
-	return datetime.datetime.utcnow()
+        return datetime.datetime.utcnow()
