@@ -123,14 +123,14 @@ class Client(object):
 
            Optionally the caller can specify the rate for the decrement (default is 1) as
            well as whether to treat the stat as a gauge (default: False)."""
-        self.client.update_stats(stat, delta, rate)
+        self.client.update_stats(stat, delta, rate, gauge)
 
     def decrement(self, stat, delta=1, rate=1, gauge=False):
         """Decrements the given counter by the delta provided (default: 1).
 
            Optionally the caller can specify the rate for the decrement (default: 1) as
            well as whether to treat the stat as a gauge (default: False)."""
-        self.client.update_stats(stat, -1 * delta, rate)
+        self.client.update_stats(stat, -1 * delta, rate, gauge)
 
     def set(self, stat, value, rate=1):
         """Sets the given gauge to the value provided.
