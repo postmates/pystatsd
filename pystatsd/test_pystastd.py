@@ -27,6 +27,16 @@ class TestPystatsd(unittest.TestCase):
 	pystatsd.decrement(stat="foo.bar", delta=130)
         pystatsd.decrement(stat="bar.baz", rate=0.5)
 
+    def test_gauge_increment(self):
+        pystatsd.increment(stat="foo.bar", gauge=True)
+        pystatsd.increment(stat="foo.bar", delta=10, gauge=True)
+        pystatsd.increment(stat="foo.bar", rate=0.5, gauge=True)
+
+    def test_gauge_decrement(self):
+        pystatsd.decrement(stat="bar.baz", gauge=True)
+	pystatsd.decrement(stat="foo.bar", delta=130, gauge=True)
+        pystatsd.decrement(stat="bar.baz", rate=0.5, gauge=True)
+
     def test_gauge_set(self):
         pystatsd.set(stat="my.gauge", value=4000)
         pystatsd.set(stat="my.gauge", value=4100, rate=0.1)
