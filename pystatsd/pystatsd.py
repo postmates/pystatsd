@@ -182,7 +182,7 @@ class _StatsClient(object):
         if value >= 0:
             stats = {stat: set_gauge}
         else:
-            payload = ["0|g", set_gauge],
+            payload = ["0|g", set_gauge]
             stats = {stat: payload}
 
         self.send(stats, sample_rate)
