@@ -205,7 +205,7 @@ class _StatsClient(object):
     def render_datum(self, stat, value_or_list, sample_rate=1):
         value_list = value_or_list if isinstance(value_or_list, list) else [value_or_list]
         string = '\n'.join([self.render_data(stat, value, sample_rate) for value in value_list])
-        return bytes(bytearray("%s:%s" % (stat, string), "utf-8"))
+        return bytes(bytearray(string, "utf-8"))
 
     def render_data(self, stat, value, sample_rate=1):
         if sample_rate < 1:
