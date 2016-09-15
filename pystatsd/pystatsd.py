@@ -202,12 +202,12 @@ class _StatsClient(object):
             data = dict((stat, "%s|c" % delta) for stat in stats)
         self.send(data, sample_rate)
 
-    def render_datum(self, stat, value_or_list, sample_rate=1):
+    def render_data(self, stat, value_or_list, sample_rate=1):
         value_list = value_or_list if isinstance(value_or_list, list) else [value_or_list]
-        string = '\n'.join([self.render_data(stat, value, sample_rate) for value in value_list])
+        string = '\n'.join([self.render_datum(stat, value, sample_rate) for value in value_list])
         return bytes(bytearray(string, "utf-8"))
 
-    def render_data(self, stat, value, sample_rate=1):
+    def render_datum(self, stat, value, sample_rate=1):
         if sample_rate < 1:
             sample_data = "%s|@%s" % (value, sample_rate)
         else:
@@ -228,7 +228,7 @@ class _StatsClient(object):
                 return
 
         for stat, value in data.items():
-            self.udp_send(self.render_datum(stat, value, sample_rate))
+            self.udp_send(self.render_data(stat, value, sample_rate))
 
     def udp_send(self, blob):
         try:
