@@ -178,7 +178,13 @@ class _StatsClient(object):
         Log gauge information for a single stat
         >>> statsd_client.gauge('some.gauge',42)
         """
-        stats = {stat: "%f|g" % value}
+        set_gauge = "%s|g" % value
+        if value >= 0:
+            stats = {stat: set_gauge}
+        else:
+            payload = ["0|g", set_gauge]
+            stats = {stat: payload}
+
         self.send(stats, sample_rate)
 
     def update_stats(self, stats, delta, sample_rate=1, gauges=False):
@@ -196,6 +202,19 @@ class _StatsClient(object):
             data = dict((stat, "%s|c" % delta) for stat in stats)
         self.send(data, sample_rate)
 
+    def render_data(self, stat, value_or_list, sample_rate=1):
+        value_list = value_or_list if isinstance(value_or_list, list) else [value_or_list]
+        string = '\n'.join([self.render_datum(stat, value, sample_rate) for value in value_list])
+        return bytes(bytearray(string, "utf-8"))
+
+    def render_datum(self, stat, value, sample_rate=1):
+        if sample_rate < 1:
+            sample_data = "%s|@%s" % (value, sample_rate)
+        else:
+            sample_data = value
+
+        return "%s:%s" % (stat, sample_data)
+
     def send(self, data, sample_rate=1):
         """
         Squirt the metrics over UDP
@@ -207,13 +226,9 @@ class _StatsClient(object):
         if sample_rate < 1:
             if random.random() > sample_rate:
                 return
-            sampled_data = dict((stat, "%s|@%s" % (value, sample_rate))
-                                for stat, value in data.items())
-        else:
-            sampled_data = data
 
-        for stat, value in sampled_data.items():
-            self.udp_send(bytes(bytearray("%s:%s" % (stat, value), "utf-8")))
+        for stat, value in data.items():
+            self.udp_send(self.render_data(stat, value, sample_rate))
 
     def udp_send(self, blob):
         try:
