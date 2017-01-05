@@ -37,11 +37,14 @@ def decrement(stat, delta=1, rate=1, gauge=False):
        well as whether to treat the stat as a gauge (default: False)."""
     Client().decrement(stat, delta, rate, gauge)
 
-def set(stat, value, rate=1):
+def set(stat, value, rate=1, ephemeral=False):
     """Sets the given gauge to the value provided.
 
+       Optional Arguments:
+           ephemeral - boolean : Specifies if the gauge should be cleared on flush.  Default = False.
+
        Optionally the caller can specify the rate for the set operation (default: 1)."""
-    Client().set(stat, value, rate)
+    Client().set(stat, value, rate, ephemeral)
 
 def timing(stat, value):
     """Set timing stat to the value provided."""
@@ -132,11 +135,11 @@ class Client(object):
            well as whether to treat the stat as a gauge (default: False)."""
         self.client.update_stats(stat, -1 * delta, rate, gauge)
 
-    def set(self, stat, value, rate=1):
+    def set(self, stat, value, rate=1, ephemeral=False):
         """Sets the given gauge to the value provided.
 
            Optionally the caller can specify the rate for the set operation (default: 1)"""
-        self.client.gauge(stat, value, rate)
+        self.client.gauge(stat, value, rate, ephemeral)
 
     def timing(self, stat, value, rate=1):
         """Set timing stat to the value provided."""
@@ -173,19 +176,20 @@ class _StatsClient(object):
         stats = {stat: "%f|ms" % time}
         self.send(stats, sample_rate)
 
-    def gauge(self, stat, value, sample_rate=1):
+    def gauge(self, stat, value, sample_rate=1, ephemeral=False):
         """
         Log gauge information for a single stat
         >>> statsd_client.gauge('some.gauge',42)
         """
-        set_gauge = "%s|g" % value
-        if value >= 0:
-            stats = {stat: set_gauge}
+        if ephemeral:
+            self.update_stats(stat, value, sample_rate, gauges=True)
         else:
+            prefix = '+' if value >= 0 else ''
+            set_gauge = "%s%s|g" % (prefix, value)
             payload = ["0|g", set_gauge]
             stats = {stat: payload}
 
-        self.send(stats, sample_rate)
+            self.send(stats, sample_rate)
 
     def update_stats(self, stats, delta, sample_rate=1, gauges=False):
         """

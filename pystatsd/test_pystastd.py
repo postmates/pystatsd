@@ -40,6 +40,7 @@ class TestPystatsd(unittest.TestCase):
     def test_gauge_set(self):
         pystatsd.set(stat="my.gauge", value=4000)
         pystatsd.set(stat="my.gauge", value=4100, rate=0.1)
+        pystatsd.set(stat="my.gauge", value=4100, ephemeral=True)
 
     def test_timing(self):
         pystatsd.timing(stat="my.timer", value=400)
