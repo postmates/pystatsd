@@ -187,7 +187,7 @@ class _StatsClient(object):
             payload = [set_gauge]
             stats = {stat: payload}
         else:
-            prefix = '+' if value >= 0 else ''
+            prefix = '+' if value >= 0 else '-'
             set_gauge = "%s%s|g" % (prefix, value)
             payload = ["0|g", set_gauge]
             stats = {stat: payload}
