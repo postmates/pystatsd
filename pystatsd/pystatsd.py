@@ -192,7 +192,7 @@ class _StatsClient(object):
             payload = ["0|g", set_gauge]
             stats = {stat: payload}
 
-            self.send(stats, sample_rate)
+        self.send(stats, sample_rate)
 
     def update_stats(self, stats, delta, sample_rate=1, gauges=False):
         """
