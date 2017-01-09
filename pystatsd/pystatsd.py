@@ -182,7 +182,10 @@ class _StatsClient(object):
         >>> statsd_client.gauge('some.gauge',42)
         """
         if ephemeral:
-            self.update_stats(stat, value, sample_rate, gauges=True)
+            prefix = '-' if value < 0 else ''
+            set_gauge = "%s%s|g" % (prefix, value)
+            payload = [set_gauge]
+            stats = {stat: payload}
         else:
             prefix = '+' if value >= 0 else ''
             set_gauge = "%s%s|g" % (prefix, value)
