@@ -52,4 +52,10 @@ def foo():
 
 ## Running Tests
 
+### Prerequisites
+
+* tox
+
+```bash
     make check
+```

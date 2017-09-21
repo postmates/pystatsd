@@ -10,25 +10,26 @@
 # * Introduced singleton Client wrapper around StatsClient
 # * Added `one-liner` API
 # * Removed increment / decrement from _StatsClient as they were unused.
+from future.utils import with_metaclass
 
+import os
 import logging
 import socket
 import random
 import time
 import datetime
-from functools import wraps
 
-import os
+from functools import wraps
 
 
 # Public API
-
 def increment(stat, delta=1, rate=1, gauge=False):
     """Increments the given counter by the delta provided (default: 1).
 
        Optionally the caller can specify the rate for the decrement (default: 1) as
        well as whether to treat the stat as a gauge (default: False)."""
     Client().increment(stat, delta, rate, gauge)
+
 
 def decrement(stat, delta=1, rate=1, gauge=False):
     """Decrements the given counter by the delta provided (default: 1).
@@ -37,15 +38,18 @@ def decrement(stat, delta=1, rate=1, gauge=False):
        well as whether to treat the stat as a gauge (default: False)."""
     Client().decrement(stat, delta, rate, gauge)
 
+
 def set(stat, value, rate=1):
     """Sets the given gauge to the value provided.
 
        Optionally the caller can specify the rate for the set operation (default: 1)."""
     Client().set(stat, value, rate)
 
+
 def timing(stat, value):
     """Set timing stat to the value provided."""
     Client().timing(stat, value)
+
 
 class _Singleton(type):
     _instance = None
@@ -53,6 +57,7 @@ class _Singleton(type):
         if not self._instance:
             self._instance = super(_Singleton, self).__call__(*args, **kwargs)
         return self._instance
+
 
 class Timer(object):
     """A context manager/decorator for Client.timing()."""
@@ -106,11 +111,11 @@ class Timer(object):
         self._sent = True
         Client().timing(self.stat, self.ms, self.rate)
 
-class Client(object):
+
+class Client(with_metaclass(_Singleton)):
     """Singleton wrapper around _StatsClient.
 
        API matches that of the one-liner API to support use-cases where object references need to be shared."""
-    __metaclass__ = _Singleton
 
     def __init__(self):
         host = os.getenv('STATSD_HOST', 'localhost')
@@ -141,6 +146,7 @@ class Client(object):
     def timing(self, stat, value, rate=1):
         """Set timing stat to the value provided."""
         self.client.timing(stat, value, rate)
+
 
 # Private API
 

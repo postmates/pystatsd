@@ -1,7 +1,6 @@
 import os
 from setuptools import setup
 
-
 # Utility function to read the README.md file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
 # README file and 2) it's easier to type in the README file than to put a raw
@@ -20,6 +19,7 @@ setup(
     url="https://github.com/postmates/pystatsd",
     packages=['pystatsd'],
     install_requires=[
+        'future>=0.16.0'
     ],
     long_description=read('README.md'),
     classifiers=[
