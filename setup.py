@@ -10,7 +10,7 @@ def read(fname):
 
 setup(
     name="pystatsd",
-    version="2.0.1",
+    version="2.0.2",
     author="John Koenig",
     author_email="john@postmates.com",
     description=("One-liner statsd API"),
