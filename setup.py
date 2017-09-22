@@ -21,7 +21,6 @@ setup(
     test_suite='nose.collector',
     tests_require = [
         'nose',
-        'tox>=2.8.2'
     ],
     install_requires=[
         'future>=0.16.0'
