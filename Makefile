@@ -28,4 +28,4 @@ check:
 
 .PHONY: check-unit
 check-unit:
-	python -m unittest discover
+	python setup.py test
