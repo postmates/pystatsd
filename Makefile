@@ -17,10 +17,15 @@ clean-all: clean
 .PHONY: clean
 clean:
 	python setup.py clean
+	rm -rf .tox
 
 .PHONY: test
 test: check
 
 .PHONY: check
 check:
-	python -m unittest discover
+	tox
+
+.PHONY: check-unit
+check-unit:
+	python setup.py test
